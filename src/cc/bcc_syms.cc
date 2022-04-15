@@ -660,10 +660,19 @@ int bcc_foreach_function_symbol(const char *module, SYM_CB cb) {
 static int _find_sym(const char *symname, uint64_t addr, uint64_t,
                      void *payload) {
   struct bcc_symbol *sym = (struct bcc_symbol *)payload;
-  if (!strcmp(sym->name, symname)) {
-    sym->offset = addr;
-    return -1;
-  }
+  if ((!strncmp(symname, "_Z", 2) || !strncmp(symname, "___Z", 4))) {
+    char * demangled_name = abi::__cxa_demangle(symname, nullptr, nullptr, nullptr);
+    if (demangled_name && strstr(demangled_name, sym->name)){
+      sym->offset = addr;
+      return -1;      
+    }
+    free (demangled_name);
+  } else {
+   if (!strcmp(sym->name, symname)) {
+      sym->offset = addr;
+      return -1;
+    }
+  }  
   return 0;
 }
 
